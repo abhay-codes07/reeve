@@ -101,12 +101,14 @@ export class GitHubClient {
           },
         },
         retry: {
+          // Retry transient failures (5xx / network) up to N times with
+          // exponential backoff. Set the count HERE, not via a global
+          // `request.retries`: the latter stamps a retry budget onto every
+          // request, which the retry plugin's Bottleneck limiter then honours
+          // even for `doNotRetry` statuses — so 404/422 would be retried too.
+          retries: maxRequestRetries,
           // Never retry these — they are deterministic client errors.
           doNotRetry: [400, 401, 403, 404, 422],
-        },
-        request: {
-          // plugin-retry uses exponential backoff between attempts.
-          retries: maxRequestRetries,
         },
       });
   }

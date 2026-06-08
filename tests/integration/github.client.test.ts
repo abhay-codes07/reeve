@@ -64,4 +64,29 @@ describe('GitHubClient (integration via msw)', () => {
       ),
     ).rejects.toBeInstanceOf(RateLimitError);
   });
+
+  it('does NOT retry a doNotRetry status, even with a retry budget', async () => {
+    // Regression: a global request.retries used to make the retry plugin's
+    // limiter retry 404/422 too. With a budget of 3, a 404 must still hit the
+    // network exactly once.
+    let calls = 0;
+    server.use(
+      http.get('https://api.github.com/repos/octocat/ghost/issues', () => {
+        calls++;
+        return HttpResponse.json({ message: 'Not Found' }, { status: 404 });
+      }),
+    );
+
+    const client = new GitHubClient({
+      auth: 'ghp_test',
+      maxRequestRetries: 3,
+      maxRateLimitRetries: 0,
+    });
+    await expect(
+      client.request('github.issues.listForRepo', (octokit) =>
+        octokit.rest.issues.listForRepo({ owner: 'octocat', repo: 'ghost' }),
+      ),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    expect(calls).toBe(1);
+  });
 });
