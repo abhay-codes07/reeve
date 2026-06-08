@@ -1,18 +1,10 @@
+<p align="left">
+  <img src="assets/reeve-lockup.svg" alt="Reeve — autonomous GitHub maintainer" height="64">
+</p>
+
 # Reeve
 
-> An autonomous GitHub maintainer agent.
-
-Reeve maintains a GitHub repository the way a senior maintainer would: it triages
-issues, reviews pull requests, investigates regressions, and keeps the backlog
-coherent. It plans, selects its own tools, delegates isolated subtasks to scoped
-subagents, and runs long multi-step jobs without losing the thread. Built on
-[Mastra](https://mastra.ai) with Google Gemini models.
-
-**Status:** fully built. 62 tools across 9 namespaces, isolated subagents, a
-composable chain, and the long-horizon `triage_repository` task — all with
-production scaffolding (throttling, retries, typed errors, observability, an eval
-harness, unit + integration tests). A live run on 2026-06-09 completed the
-flagship triage demo across **27 tool calls** (see `artifacts/triage-demo.txt`).
+Reeve is a production-shaped autonomous agent that maintains a GitHub repository the way a senior maintainer would — built on [Mastra](https://mastra.ai) + Google Gemini, it interprets a task, **discovers and selects its own tools by description** (62 tools across 9 namespaces, progressively exposed), **delegates isolated subtasks to scoped read-only subagents**, and runs **long-horizon jobs** (the `triage_repository` task crossed **27 tool calls** in one live session) without losing its plan — all behind production scaffolding: a single throttled/retrying GitHub client, a typed error taxonomy, structured spans, and an eval harness with unit + integration tests.
 
 ## Quickstart
 
@@ -133,7 +125,7 @@ Required environment (validated at startup — missing values fail fast):
 | `pnpm test:unit` / `pnpm test:integration` | Run one project |
 | `pnpm dev` | Run the bootstrap entry point |
 
-## Production foundation (Step 2)
+## Production scaffolding
 
 - **Env config** — zod-validated, fail-fast with an aggregated error.
 - **Model config** — Mastra model router with a fallback chain + per-model retries.
@@ -181,3 +173,28 @@ pnpm eval --mock   # fully offline: stubbed judge, deterministic checks run for 
 ```
 
 Live runs fail fast on a Gemini 429 (no retry loop).
+
+## Deployment readiness
+
+The codebase is structured for deployment, not just demo:
+
+- **Typed, fail-fast config** — all secrets/settings load through one zod-validated
+  `loadEnv()` (`src/config/env.ts`); a missing var aborts at boot, not mid-run.
+- **Single GitHub choke point** — every external call goes through one
+  throttled + retrying `GitHubClient` (`src/github/client.ts`), so rate limiting,
+  exponential backoff, logging, and typed-error mapping are guaranteed, not per-call.
+- **Structured logs + spans** — JSON logging with operation/tool/latency/outcome
+  and token redaction (`src/observability`), ready to ship to any log sink.
+- **Stateless tools** — each tool is a pure typed input→output handler over the
+  shared client; nothing holds process-local state, so the service scales
+  horizontally.
+- **Model-router fallback** — the orchestrator degrades flash → flash-lite on
+  429/5xx, absorbing transient upstream failures.
+
+**How it would deploy** (not done here): package `src/` as a container image (or a
+serverless function) with config supplied entirely via environment variables; the
+GitHub PAT and model key are injected as secrets. To take it off the free tier,
+swap the runtime model to a higher-tier/paid key in **one line** in
+`src/config/models.ts` (the model router makes the provider/model
+provider-swappable). No code changes are required to point Reeve at a different
+repository — only `GITHUB_SANDBOX_REPO`.
