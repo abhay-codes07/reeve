@@ -126,3 +126,30 @@ One line each, with rationale.
   errors** — subagent integration tests self-skip on a quota/rate-limit error
   (limit ~20 req/min for flash-lite), exactly as they skip without credentials,
   so `pnpm test` stays green. The path itself is verified when quota is available.
+
+## Long-horizon task (triage_repository)
+
+- **Controlled loop, not the LLM router** — `triage_repository` is deterministic
+  orchestration in code. CLAUDE.md allows "workflow OR controlled agent loop";
+  the loop gives reproducible coverage, a reliable >20 tool-call count, and full
+  unit testability, while still satisfying long-horizon coherence. The only model
+  surface is the `investigate_issue` subagent.
+- **Lightweight in-process memory, not @mastra/memory** — `TriageMemory` +
+  `InMemoryTriageMemory` persist the plan, compacted batch summaries, and a state
+  bag with no DB dependency, keeping the task deterministic and hermetic to test.
+  The interface is the seam for a Mastra Memory backend later.
+- **Compaction = reduce each processed batch to one line** — pages, the cluster
+  set, and each investigation are summarised into memory; only condensed
+  representations (issue summaries, 4-field investigation records) are carried
+  forward, so the working set stays bounded regardless of repo size.
+- **Tool-call count includes GitHub reads + subagent calls** — to exceed 20
+  without burning Gemini, the loop gathers per-issue context (get/comments/events)
+  for the top items (GitHub, cheap) and limits `investigate_issue` (Gemini) to a
+  small `investigateLimit` (default 3). On the 10-issue sandbox this is ~27 calls.
+- **No live Gemini calls this step** — built code + mocked, network-hermetic unit
+  tests only; injected `invoke`/`investigate` deps make the run testable without
+  GitHub or Gemini. The Gemini-touching subagents integration test was NOT run
+  (it would attempt a call to self-skip), to conserve the free-tier daily quota.
+- **Demo fails fast on 429** — `scripts/triage-demo.ts` prints a clear "retry when
+  quota resets" message and exits on a rate-limit error; it never retries in a
+  loop, so it cannot burn quota.

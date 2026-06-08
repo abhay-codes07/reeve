@@ -58,6 +58,21 @@
   brief-only input, fresh threadId, discoverable-but-non-recursive) + live
   integration tests (self-skip on free-tier 429 / no PRs / no creds).
 
+## What we built (long-horizon triage_repository)
+
+- `triage_repository(ctx, opts)`: deterministic controlled loop — record PLAN →
+  paginate ALL open issues → cluster → gather context + run investigate_issue on
+  top items → draft ranked backlog. Crosses 20+ tool calls (~27 on the 10-issue
+  sandbox), tracked by a ToolCallCounter logged through observability.
+- Explicit context management: `TriageMemory`/`InMemoryTriageMemory` persists the
+  plan + a state bag, and COMPACTS every processed batch (page, cluster, each
+  investigation) to a one-line summary so the working set stays bounded.
+- `scripts/triage-demo.ts`: live demo (run after quota resets) that prints the
+  tool-call count + ranked backlog and FAILS FAST on a Gemini 429 (no retry loop).
+- Unit tests only this step (mocked invoke + investigate, fully hermetic): plan
+  persisted, compaction happens, counter > 20, backlog shape valid, pagination
+  makes multiple calls, investigateLimit respected. No live Gemini call made.
+
 ## What we cut / deferred
 
 - The actual tools, agents, workflows, and eval harness (Steps 3–6) — only
