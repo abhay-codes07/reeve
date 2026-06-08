@@ -37,6 +37,8 @@ export interface GitHubClientOptions {
   maxRateLimitRetries?: number;
   /** How many times the retry plugin should retry transient failures. */
   maxRequestRetries?: number;
+  /** Base backoff in ms for retries/throttling. Lowered in tests for speed. */
+  retryAfterBaseValue?: number;
   /** Logger to bind operations under. */
   logger?: Logger;
 }
@@ -54,6 +56,7 @@ export class GitHubClient {
     this.log = opts.logger ?? rootLogger;
     const maxRateLimitRetries = opts.maxRateLimitRetries ?? 2;
     const maxRequestRetries = opts.maxRequestRetries ?? 3;
+    const baseValue = opts.retryAfterBaseValue;
 
     this.octokit =
       opts.octokit ??
@@ -61,6 +64,7 @@ export class GitHubClient {
         auth: opts.auth ?? env?.GITHUB_TOKEN,
         userAgent: 'reeve/0.1.0',
         throttle: {
+          ...(baseValue !== undefined ? { retryAfterBaseValue: baseValue } : {}),
           // Primary rate limit: retry after the suggested cool-off, up to N times.
           onRateLimit: (
             retryAfter: number,
@@ -109,6 +113,7 @@ export class GitHubClient {
           retries: maxRequestRetries,
           // Never retry these — they are deterministic client errors.
           doNotRetry: [400, 401, 403, 404, 422],
+          ...(baseValue !== undefined ? { retryAfterBaseValue: baseValue } : {}),
         },
       });
   }
