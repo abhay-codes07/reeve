@@ -3,3 +3,7 @@ node_modules/
 dist/
 .mastra/
 *.log
+
+# Build traces go to the evaluator by email, not into the public repo.
+/artifacts/traces/
+/artifacts/reeve-traces.zip

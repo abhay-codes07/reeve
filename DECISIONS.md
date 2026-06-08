@@ -199,3 +199,21 @@ One line each, with rationale.
 - **Reeve project has no git remote and no auth to create one** (gh token invalid;
   the sandbox PAT is fine-grained to the sandbox). The project is committed
   locally; the pushed remote is the sandbox (`reeve-sandbox`, PR #11).
+
+## Submission polish + audit
+
+- **Compliance audit: all PASS, no fixes required.** Verified 62 tools / 9
+  namespaces with mechanical `invoke_tool` (no hand-coded routing — grep clean),
+  isolated subagents + isolation tests, the live 27-call triage artifact, full
+  production scaffolding, the composable chain, and MEMO/README completeness.
+  No dead code, no broken README links, no stray TODO/FIXME found.
+- **Secret scan: clean.** Working tree and all 35 commits scanned for
+  `github_pat_`/`ghp_`/`AIza`/`sk-` value patterns and the exact current PAT and
+  Google-key fragments — 0 matches. `.env` is gitignored and never tracked.
+  History was NOT rewritten (report-only).
+- **Artifacts left as authentic UTF-16 captures** — PowerShell `*>` redirection
+  writes UTF-16; the run outputs in `artifacts/*.txt` are the unedited captures,
+  so they were not re-encoded.
+- **Build traces excluded from the public repo** — `artifacts/traces/` and
+  `artifacts/reeve-traces.zip` are gitignored; they go to the evaluator by email,
+  not into the repo.
