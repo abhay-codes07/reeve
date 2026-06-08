@@ -43,3 +43,31 @@ One line each, with rationale.
 - **`@octokit/types` as a direct dep** — imported `EndpointDefaults` to type the
   throttling callbacks explicitly (the plugin's option types don't flow inference
   into the literal under strict mode).
+
+## Step 3 — Tool registry
+
+- **Custom registry, not Mastra MCP servers (yet)** — the spec requires a single
+  registry with progressive exposure and a mechanical `invoke_tool`. A typed
+  `ToolDefinition` registry models that directly; Step 4 wraps the 4 exposure
+  operations as the Mastra tools handed to the agent. Selection stays model-driven.
+- **Handlers map responses into compact typed outputs** — rather than echoing raw
+  GitHub payloads. Keeps model context small and guarantees output-schema
+  validation always passes (the handler builds exactly what the schema declares).
+- **Tools default `owner`/`repo` to the sandbox** — the agent almost always
+  operates on the configured sandbox repo; making them optional keeps call sites
+  terse while still allowing cross-repo use (e.g. search).
+- **`AnyToolDefinition` is structural with an `any` handler arg** — storing
+  `ToolDefinition<SpecificIn, SpecificOut>` in a `ToolDefinition<ZodTypeAny,…>`
+  array trips generic-function-parameter variance under strict mode. A structural
+  erased type sidesteps it; per-tool handler type-checking still happens inside
+  `defineTool`.
+- **`zod-to-json-schema` dep** — `get_tool_schema` returns JSON Schema the model
+  can read; zod 3.x has no built-in emitter, and this lib is the de-facto standard.
+- **`prs_get_diff` returns raw diff text** — uses the `diff` media type, so the
+  response body is a string, not the PR object; cast accordingly.
+- **`issues_search_in_repo` auto-scopes the query** with `repo:owner/repo is:issue`
+  so the model can pass plain search terms.
+- **Tool names are `^[a-z][a-z0-9_]*$`** (e.g. `issues_list`) — globally unique and
+  safe for model function-calling; namespace is stored as a separate field.
+- **Split the `get_diff/list_files` bullet into two tools** — distinct, composable
+  capabilities; brings github-prs to 12 and the total to 58 (comfortably >50).

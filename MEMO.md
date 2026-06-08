@@ -14,6 +14,20 @@
 - vitest unit + integration projects; msw makes unit tests hermetic.
 - README, DECISIONS.md, .env.example.
 
+## What we built (Step 3 — tool registry)
+
+- 58 typed GitHub tools across 7 namespaces (issues 14, prs 12, repo 11, actions
+  8, search 6, checks 3, releases 4), each with a zod input/output schema, a
+  model-facing description, and a handler that calls GitHub only via the Step-2
+  client.
+- A single `ToolRegistry` (source of truth) + progressive exposure
+  (`list_namespaces`, `list_tools`, `get_tool_schema`, `invoke_tool`). The model
+  never sees all 58 defs at once; it discovers and selects by name.
+- `invoke_tool` is a mechanical dispatcher: validate args → run handler →
+  validate output, mapping failures into the taxonomy. No tool-selection logic.
+- 47 tests total (msw-mocked, network-hermetic): >=2 tools per namespace,
+  registry shape, exposure, and invoke_tool validation + error mapping.
+
 ## What we cut / deferred
 
 - The actual tools, agents, workflows, and eval harness (Steps 3–6) — only
