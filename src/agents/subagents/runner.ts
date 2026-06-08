@@ -85,19 +85,31 @@ export async function runSubagent<S extends z.ZodTypeAny>(
   const { agent, threadId } = createSubagent(ctx, spec);
   const log = createOperationLogger({ operation: `subagent.${spec.id}`, threadId }, ctx.logger);
   log.info({ scope: spec.scope }, 'subagent.start');
+  const start = performance.now();
 
-  const result = await agent.generate(brief, {
-    // Give structuredOutput its OWN structuring model. The main agent calls
-    // tools (no response_format), then a separate, tools-free structuring pass
-    // emits the typed JSON via native response_format. This sidesteps Gemini's
-    // rejection of a JSON response mime type in the same request as function
-    // calling, and populates `result.object`.
-    structuredOutput: { schema, model: workerModel },
-    maxSteps,
-  });
+  try {
+    const result = await agent.generate(brief, {
+      // Give structuredOutput its OWN structuring model. The main agent calls
+      // tools (no response_format), then a separate, tools-free structuring pass
+      // emits the typed JSON via native response_format. This sidesteps Gemini's
+      // rejection of a JSON response mime type in the same request as function
+      // calling, and populates `result.object`.
+      structuredOutput: { schema, model: workerModel },
+      maxSteps,
+    });
 
-  const object = (result as { object?: unknown }).object;
-  const parsed = schema.parse(object);
-  log.info('subagent.done');
-  return parsed;
+    const object = (result as { object?: unknown }).object;
+    const parsed = schema.parse(object);
+    log.info(
+      { durationMs: Math.round(performance.now() - start), outcome: 'success' },
+      'subagent.done',
+    );
+    return parsed;
+  } catch (err) {
+    log.error(
+      { durationMs: Math.round(performance.now() - start), outcome: 'failure', err },
+      'subagent.failed',
+    );
+    throw err;
+  }
 }

@@ -23,6 +23,7 @@ import {
   ToolRegistry,
 } from '../tools/index.js';
 import { isReeveError } from '../errors/index.js';
+import { createOperationLogger } from '../observability/index.js';
 
 export const ORCHESTRATOR_INSTRUCTIONS = `You are Reeve, an autonomous maintainer for a single GitHub repository (the "sandbox" repo configured in the environment).
 
@@ -44,6 +45,8 @@ Rules:
 
 /** Build the four exposure tools, bound to a registry + execution context. */
 export function buildExposureTools(ctx: ToolContext, registry: ToolRegistry = defaultRegistry) {
+  const log = createOperationLogger({ operation: 'orchestrator' }, ctx.logger);
+
   const list_namespaces = createTool({
     id: 'list_namespaces',
     description: 'List the available tool namespaces (families), each with a description and tool count.',
@@ -95,16 +98,25 @@ export function buildExposureTools(ctx: ToolContext, registry: ToolRegistry = de
       error: z.string().optional(),
     }),
     execute: async (input) => {
+      // Structured span around each delegated tool call: operation, tool name,
+      // latency, outcome — so model-driven tool use is traceable end-to-end.
+      const start = performance.now();
       try {
         const result = await invokeTool(registry, input.toolName, input.args ?? {}, ctx);
+        log.info(
+          { operation: 'orchestrator.invoke_tool', tool: input.toolName, durationMs: Math.round(performance.now() - start), outcome: 'success' },
+          'orchestrator.tool_call',
+        );
         return { ok: true, result };
       } catch (err) {
-        if (isReeveError(err)) {
-          return { ok: false, errorCode: err.code, error: err.message };
-        }
+        const errorCode = isReeveError(err) ? err.code : 'UNKNOWN';
+        log.warn(
+          { operation: 'orchestrator.invoke_tool', tool: input.toolName, durationMs: Math.round(performance.now() - start), outcome: 'failure', errorCode },
+          'orchestrator.tool_call',
+        );
         return {
           ok: false,
-          errorCode: 'UNKNOWN',
+          errorCode,
           error: err instanceof Error ? err.message : String(err),
         };
       }

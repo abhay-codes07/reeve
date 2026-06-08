@@ -80,16 +80,29 @@ export type TriageRepositoryResult = z.infer<typeof triageRepositoryResult>;
 // Tool-call counter (through observability)
 // ---------------------------------------------------------------------------
 
-/** Counts every tool/subagent call and logs the running total. */
+/**
+ * Counts every tool/subagent call and emits one structured span per call —
+ * operation, tool name, latency, outcome, and the running count — so the
+ * tool-call total is visible end-to-end through the observability layer.
+ */
 export class ToolCallCounter {
   private n = 0;
   constructor(private readonly log: Logger) {}
   get count(): number {
     return this.n;
   }
-  record(label: string): number {
+  record(tool: string, span: { durationMs?: number; outcome?: 'success' | 'failure' } = {}): number {
     this.n += 1;
-    this.log.info({ toolCall: label, count: this.n }, 'triage.tool_call');
+    this.log.info(
+      {
+        operation: 'triage.tool_call',
+        tool,
+        count: this.n,
+        ...(span.durationMs !== undefined ? { durationMs: span.durationMs } : {}),
+        ...(span.outcome ? { outcome: span.outcome } : {}),
+      },
+      'triage.tool_call',
+    );
     return this.n;
   }
 }
@@ -144,14 +157,35 @@ export async function triageRepository(
   const invoke = options.invoke ?? ((name, args) => invokeTool(registry, name, args, ctx));
   const investigate = options.investigate ?? ((n: number) => runInvestigateIssue(ctx, n));
 
-  // Counted wrappers — every external call flows through these.
+  // Counted wrappers — every external call flows through these, each emitting a
+  // structured span (tool, latency, outcome) and bumping the running count.
   const callTool = async (name: string, args: unknown, label?: string): Promise<unknown> => {
-    counter.record(label ?? name);
-    return invoke(name, args);
+    const start = performance.now();
+    try {
+      const out = await invoke(name, args);
+      counter.record(label ?? name, { durationMs: Math.round(performance.now() - start), outcome: 'success' });
+      return out;
+    } catch (err) {
+      counter.record(label ?? name, { durationMs: Math.round(performance.now() - start), outcome: 'failure' });
+      throw err;
+    }
   };
   const callInvestigate = async (issueNumber: number): Promise<IssueInvestigation> => {
-    counter.record(`investigate_issue#${issueNumber}`);
-    return investigate(issueNumber);
+    const start = performance.now();
+    try {
+      const out = await investigate(issueNumber);
+      counter.record(`investigate_issue#${issueNumber}`, {
+        durationMs: Math.round(performance.now() - start),
+        outcome: 'success',
+      });
+      return out;
+    } catch (err) {
+      counter.record(`investigate_issue#${issueNumber}`, {
+        durationMs: Math.round(performance.now() - start),
+        outcome: 'failure',
+      });
+      throw err;
+    }
   };
 
   // 1) PLAN -------------------------------------------------------------------

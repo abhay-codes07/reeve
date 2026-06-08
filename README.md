@@ -107,3 +107,39 @@ Required environment (validated at startup — missing values fail fast):
 - **Observability** — pino structured logging with bound operation context.
 - **Tests** — vitest unit + integration projects; msw guarantees unit tests never
   hit the network.
+
+## Observability — what is traced
+
+Everything logs through one pino-based layer (`src/observability`), which binds an
+`operation` (and optional `correlationId`) to every line and redacts tokens/keys.
+Each significant unit emits structured **spans** carrying `operation`, the `tool`
+name where relevant, `durationMs` latency, and an `outcome` (`success`/`failure`):
+
+| Layer | Span(s) | Key fields |
+| --- | --- | --- |
+| GitHub client | `github.request.start/success/failure` | `operation`, `durationMs`, mapped `err` |
+| Throttle/retry | `Primary/Secondary rate limit hit` | `method`, `url`, `retryAfter`, `retryCount` |
+| Orchestrator | `orchestrator.tool_call` | `operation`, `tool`, `durationMs`, `outcome`, `errorCode` |
+| Subagents | `subagent.start` / `subagent.done` / `subagent.failed` | `threadId`, `scope`, `durationMs`, `outcome` |
+| triage_repository | `triage.tool_call`, `triage.plan_recorded`, `triage.gathered`, `triage.done` | `tool`, `durationMs`, `outcome`, **running `count`** |
+
+The **tool-call count is visible end-to-end**: every tool/subagent call in the
+long-horizon task increments a `ToolCallCounter` that logs the running `count` on
+each call, and the final result reports `totalToolCalls`. Logs are JSON by
+default; set `REEVE_LOG_PRETTY=1` for human-readable output and
+`REEVE_LOG_LEVEL=debug` for verbose tracing.
+
+## Evaluation harness
+
+`src/eval` scores triage/investigation quality against fixtures mirroring the
+seeded sandbox. The scorer has two modes: **deterministic** checks (exact /
+contains / ordering on structured outcomes) and an **LLM judge** for fuzzy
+criteria. The judge is the *only* place the harness touches a live model and is
+isolated behind one function, so it is fully mockable.
+
+```bash
+pnpm eval          # default: live judge (google/gemini-2.5-flash-lite)
+pnpm eval --mock   # fully offline: stubbed judge, deterministic checks run for real
+```
+
+Live runs fail fast on a Gemini 429 (no retry loop).
