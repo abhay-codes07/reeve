@@ -43,16 +43,20 @@ async function main(): Promise<void> {
   const env = loadEnv();
   const github = getGitHubClient(env);
 
+  // investigateLimit is the number of Gemini-backed investigations. Keep it
+  // modest to fit the free tier; the run still crosses 20+ tool calls via
+  // pagination + per-issue context gathering + drafting. Tune without editing:
+  //   pnpm tsx scripts/triage-demo.ts 2      (or TRIAGE_INVESTIGATE_LIMIT=2)
+  const investigateLimit = Number(
+    process.argv[2] ?? process.env.TRIAGE_INVESTIGATE_LIMIT ?? 3,
+  );
+
   hr('TRIAGE START');
   console.log('repo:', `${env.sandbox.owner}/${env.sandbox.repo}`);
+  console.log('investigateLimit:', investigateLimit, '(Gemini-backed subagent runs)');
   console.log('Investigations use the live gemini-2.5-flash-lite subagent.');
 
-  // investigateLimit kept modest to fit the free tier; the run still crosses
-  // 20+ tool calls via pagination + per-issue context gathering + drafting.
-  const result = await triageRepository(
-    { github, env },
-    { investigateLimit: 3 },
-  );
+  const result = await triageRepository({ github, env }, { investigateLimit });
 
   hr('PLAN (recorded to memory at start)');
   console.log(result.plan.goal);
