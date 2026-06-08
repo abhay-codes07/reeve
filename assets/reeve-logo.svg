@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title desc">
+  <title id="title">Reeve</title>
+  <desc id="desc">A hexagonal seal with a steward's key carved in negative space — the mark for Reeve, an autonomous GitHub maintainer.</desc>
+  <!--
+    Palette: accent teal #14B8A6 (deep slate #1E293B is used for the wordmark in the lockup).
+    The mark is a single accent colour plus transparency, so it reads on both light and dark
+    backgrounds. The key (a steward's emblem) is negative space: the background shows through it.
+    Original geometric work — no third-party marks.
+  -->
+  <defs>
+    <mask id="reeve-key">
+      <rect width="64" height="64" fill="white"/>
+      <!-- bow: a ring -->
+      <circle cx="32" cy="21" r="7" fill="black"/>
+      <circle cx="32" cy="21" r="3" fill="white"/>
+      <!-- shaft -->
+      <rect x="29.5" y="21" width="5" height="22" rx="2.5" fill="black"/>
+      <!-- teeth -->
+      <rect x="34.5" y="34" width="6" height="3" rx="1.5" fill="black"/>
+      <rect x="34.5" y="39.5" width="4.5" height="3" rx="1.5" fill="black"/>
+    </mask>
+  </defs>
+  <polygon
+    points="32,5 55.38,18.5 55.38,45.5 32,59 8.62,45.5 8.62,18.5"
+    fill="#14B8A6"
+    stroke="#14B8A6"
+    stroke-width="4"
+    stroke-linejoin="round"
+    mask="url(#reeve-key)"/>
+</svg>
