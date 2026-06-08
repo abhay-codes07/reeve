@@ -24,6 +24,7 @@ export const NAMESPACES = {
   'github-checks': 'Inspect commit check runs and check suites (CI status for a ref).',
   'github-releases': 'Inspect repository releases: list, get by id/tag, and latest.',
   triage: 'Composable triage transforms: cluster a set of issues, then draft a ranked backlog report. These consume the structured output of github-search.',
+  subagents: 'Spawn an isolated, read-only worker subagent to review a pull request or investigate an issue, returning a structured result.',
 } as const;
 
 /** A known namespace identifier. */

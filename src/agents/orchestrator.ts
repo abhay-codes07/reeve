@@ -22,8 +22,6 @@ import {
   invokeTool,
   ToolRegistry,
 } from '../tools/index.js';
-import { loadEnv } from '../config/index.js';
-import { getGitHubClient } from '../github/index.js';
 import { isReeveError } from '../errors/index.js';
 
 export const ORCHESTRATOR_INSTRUCTIONS = `You are Reeve, an autonomous maintainer for a single GitHub repository (the "sandbox" repo configured in the environment).
@@ -128,14 +126,4 @@ export function createOrchestrator(
     model: orchestratorModel,
     tools: buildExposureTools(ctx, registry),
   });
-}
-
-/**
- * Convenience: build the orchestrator from the validated environment, wiring a
- * real GitHub client. Throws (via loadEnv) if configuration is missing.
- */
-export function createDefaultOrchestrator(): Agent {
-  const env = loadEnv();
-  const github = getGitHubClient(env);
-  return createOrchestrator({ github, env });
 }

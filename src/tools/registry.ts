@@ -73,6 +73,19 @@ export class ToolRegistry {
     return [...seen];
   }
 
+  /**
+   * Build a NEW registry containing only the named tools — the scoping
+   * primitive used to give a subagent a genuinely restricted toolset. The
+   * resulting registry physically lacks every other tool, so a subagent driving
+   * it cannot discover or invoke anything outside its scope. Throws
+   * {@link NotFoundError} if any requested tool is unknown.
+   */
+  subset(names: readonly string[]): ToolRegistry {
+    const scoped = new ToolRegistry();
+    for (const name of names) scoped.register(this.get(name));
+    return scoped;
+  }
+
   /** Tools within a namespace. Throws {@link NotFoundError} for unknown ones. */
   byNamespace(namespace: string): AnyToolDefinition[] {
     if (!(namespace in NAMESPACES)) {
