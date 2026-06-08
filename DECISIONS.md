@@ -153,3 +153,29 @@ One line each, with rationale.
 - **Demo fails fast on 429** — `scripts/triage-demo.ts` prints a clear "retry when
   quota resets" message and exits on a rate-limit error; it never retries in a
   loop, so it cannot burn quota.
+
+## Eval harness + production hardening
+
+- **Judge is the single live-model seam** — fuzzy criteria go through one `Judge`
+  function (`createLlmJudge`); deterministic checks and all scenario `produce()`s
+  are offline. `mockJudge` makes `pnpm eval --mock` fully hermetic. Default is the
+  live judge; it fails fast on a 429.
+- **Scenario subjects run offline** — the deterministic triage transforms are pure
+  functions, so the eval scores real behaviour without GitHub or Gemini; the
+  investigation scenario uses a representative fixture rather than a live subagent
+  run, keeping the judge the only model touchpoint.
+- **Model-fallback tested with local mock LanguageModelV2 objects** — a simulated
+  429 from a hand-rolled V2 mock drives Mastra's real fallback (flash retried,
+  then flash-lite), verified empirically before codifying. No live model, no
+  added dependency (the AI SDK's MockLanguageModelV2 isn't exported in this
+  version).
+- **`retryAfterBaseValue` option on GitHubClient** — lets resilience tests scale
+  backoff to ~1ms so retry behaviour is exercised fast; defaults to the plugin's
+  1000ms in production.
+- **Observability spans carry operation/tool/latency/outcome** — orchestrator
+  `invoke_tool`, the subagent runner, and every triage tool call emit a structured
+  span; the `ToolCallCounter` logs the running count and the result reports the
+  total. Documented in the README OBSERVABILITY section.
+- **No live Gemini call this step** — verified by running only the offline eval
+  (`--mock`), the unit suite, and the non-Gemini integration files; the
+  Gemini-touching subagents integration test was deliberately not run.

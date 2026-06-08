@@ -73,6 +73,21 @@
   persisted, compaction happens, counter > 20, backlog shape valid, pagination
   makes multiple calls, investigateLimit respected. No live Gemini call made.
 
+## What we built (eval harness + production hardening)
+
+- Eval harness (`src/eval`): 5 scored scenarios vs sandbox-mirroring fixtures, a
+  two-mode scorer (deterministic + LLM judge), and `pnpm eval` with `--mock` for
+  fully offline runs. The judge is the only live-model seam, isolated + mockable.
+- Observability polish: orchestrator invoke_tool, subagent runner, and every
+  triage tool call emit structured spans (operation, tool, latency, outcome); the
+  tool-call count is logged live and reported in the result. README OBSERVABILITY
+  section added.
+- Resilience tests (hermetic): 5xx + 429 backoff retry, no-retry on 404/422,
+  every external failure → typed error, and the model fallback chain switching
+  flash → flash-lite on a simulated 429 (local mock models).
+- Added `retryAfterBaseValue` to GitHubClient so backoff can be scaled down in
+  tests. 67 unit + 11 (non-Gemini) integration tests green. No live Gemini call.
+
 ## What we cut / deferred
 
 - The actual tools, agents, workflows, and eval harness (Steps 3–6) — only
