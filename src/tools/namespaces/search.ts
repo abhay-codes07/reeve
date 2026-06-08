@@ -4,7 +4,14 @@
 
 import { z } from 'zod';
 import { defineTool, type AnyToolDefinition } from '../types.js';
-import { pagination, issueSummary, repoSummary, mapIssueSummary, mapRepo } from '../schemas.js';
+import {
+  pagination,
+  issueSummary,
+  issueSet,
+  repoSummary,
+  mapIssueSummary,
+  mapRepo,
+} from '../schemas.js';
 
 const NS = 'github-search' as const;
 const query = z.string().min(1).describe('A GitHub search query string.');
@@ -19,7 +26,8 @@ const search_issues = defineTool({
     order: z.enum(['asc', 'desc']).optional(),
     ...pagination,
   }),
-  outputSchema: z.object({ totalCount: z.number(), items: z.array(issueSummary) }),
+  // Shared by reference with cluster_issues.inputSchema — the chain handoff.
+  outputSchema: issueSet,
   handler: async (args, ctx) => {
     const { data } = await ctx.github.request('github.search.issues', (o) =>
       o.rest.search.issuesAndPullRequests({

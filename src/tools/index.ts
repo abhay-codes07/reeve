@@ -15,6 +15,7 @@ import { actionTools } from './namespaces/actions.js';
 import { searchTools } from './namespaces/search.js';
 import { checkTools } from './namespaces/checks.js';
 import { releaseTools } from './namespaces/releases.js';
+import { triageTools } from './namespaces/triage.js';
 
 /** Build a fresh registry populated with all tools. */
 export function buildRegistry(): ToolRegistry {
@@ -26,6 +27,7 @@ export function buildRegistry(): ToolRegistry {
     ...searchTools,
     ...checkTools,
     ...releaseTools,
+    ...triageTools,
   ]);
 }
 

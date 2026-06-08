@@ -52,6 +52,17 @@ export const issueSummary = z.object({
   url: z.string(),
 });
 
+/**
+ * A set of issues — the output of `search_issues` and the input of
+ * `cluster_issues`. Shared by reference so the composable chain's handoffs line
+ * up exactly (output[n] === input[n+1]).
+ */
+export const issueSet = z.object({
+  totalCount: z.number(),
+  items: z.array(issueSummary),
+});
+export type IssueSet = z.infer<typeof issueSet>;
+
 export const issueDetail = issueSummary.extend({
   body: z.string().nullable(),
   locked: z.boolean(),
