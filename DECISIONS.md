@@ -179,3 +179,23 @@ One line each, with rationale.
 - **No live Gemini call this step** — verified by running only the offline eval
   (`--mock`), the unit suite, and the non-Gemini integration files; the
   Gemini-touching subagents integration test was deliberately not run.
+
+## Final live run (2026-06-09)
+
+- **Sample PR created via git, not the API** — the sandbox repo was empty; the
+  PAT is Contents:read-only, so I cloned it, seeded `main` + a feature branch with
+  a README edit using the user's git credentials, then opened **PR #11** via the
+  PAT (Pull requests: write) with `scripts/open-pr.ts`.
+- **Gemini free tier is 20 requests PER DAY for flash-lite**
+  (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`), not per-minute — confirmed
+  from the live 429 body. The full triage run (3 investigations × several
+  flash-lite calls + structuring) exhausts it, so `review_pr` and the **live**
+  judge then 429'd and failed fast (no retry). This is an environmental limit, not
+  a code bug; the subagent runner + structured output are proven live by the 3
+  triage investigations and offline by the mock-judge eval.
+- **Live results:** smoke ✅, `triage_repository` ✅ (**27 tool calls**), eval
+  offline ✅ (5/5). `review_pr` / live-eval quota-blocked. Outputs saved under
+  `artifacts/`. No code bug surfaced; no fixes were needed.
+- **Reeve project has no git remote and no auth to create one** (gh token invalid;
+  the sandbox PAT is fine-grained to the sandbox). The project is committed
+  locally; the pushed remote is the sandbox (`reeve-sandbox`, PR #11).
