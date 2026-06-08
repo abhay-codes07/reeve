@@ -71,3 +71,26 @@ One line each, with rationale.
   safe for model function-calling; namespace is stored as a separate field.
 - **Split the `get_diff/list_files` bullet into two tools** — distinct, composable
   capabilities; brings github-prs to 12 and the total to 58 (comfortably >50).
+
+## Step 4 — Orchestrator + composable chain
+
+- **`triage` namespace for the chain transforms** — `cluster_issues` and
+  `draft_triage_report` join the single registry so the model can discover and
+  chain them via `invoke_tool`, exactly like GitHub tools. Total namespaces: 8.
+- **Chain handoffs shared BY REFERENCE** — `search_issues.outputSchema` is the
+  literal same zod object as `cluster_issues.inputSchema` (`issueSet`), and
+  likewise `clusterSet`. Makes "output[n] is input[n+1]" impossible to break and
+  trivially testable (referential `===`). Refactored `search_issues` to use the
+  shared `issueSet`.
+- **Clustering + drafting are deterministic transforms (no LLM/network)** — the
+  chain is reproducible and the integration test is stable regardless of issue
+  content. Model judgement lives in the orchestrator (and later the eval judge),
+  not in these transforms.
+- **`invoke_tool` meta-tool returns `{ ok, result | error }`** rather than throwing
+  to the model — gives the long-horizon agent structured feedback to self-correct.
+- **Orchestrator construction is explicit-context** — `createOrchestrator(ctx)` is
+  pure/testable; `createDefaultOrchestrator()` wires real env + client. Avoids
+  calling `loadEnv()` at import time (which would throw in env-less unit runs).
+- **Integration tests load `.env` themselves** — added a tiny loader in the
+  integration setup (vitest doesn't auto-load it); the chain test self-skips when
+  no token is configured, so `pnpm test` stays green without credentials.

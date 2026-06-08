@@ -28,6 +28,19 @@
 - 47 tests total (msw-mocked, network-hermetic): >=2 tools per namespace,
   registry shape, exposure, and invoke_tool validation + error mapping.
 
+## What we built (Step 4 — orchestrator + composable chain)
+
+- Orchestrator Mastra Agent on the fallback-chain model, given only the 4
+  progressive-exposure tools. Tool selection is fully model-driven — no hand-coded
+  routing. `invoke_tool` returns `{ ok, result | error }` for self-correction.
+- Composable chain `search_issues → cluster_issues → draft_triage_report` with
+  typed handoffs shared by reference (output[n] IS input[n+1]). `runTriageChain`
+  pipes it through `invokeTool` so every boundary is validated.
+- New `triage` namespace (cluster_issues, draft_triage_report) — deterministic
+  transforms, registered in the single registry (now 60 tools / 8 namespaces).
+- Tests: unit schema-lineup (referential + real data flow) and an integration
+  test running the chain end-to-end against the real sandbox repo.
+
 ## What we cut / deferred
 
 - The actual tools, agents, workflows, and eval harness (Steps 3–6) — only
