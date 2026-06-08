@@ -9,7 +9,7 @@ import { listNamespaces, listTools, getToolSchema } from '../../src/tools/exposu
 const registry = buildRegistry();
 
 describe('tool registry', () => {
-  it('registers 50+ tools across 7 namespaces', () => {
+  it('registers 50+ tools across 8 namespaces', () => {
     expect(registry.size).toBeGreaterThanOrEqual(50);
     expect(registry.namespaces().sort()).toEqual(
       [
@@ -20,6 +20,7 @@ describe('tool registry', () => {
         'github-releases',
         'github-repo',
         'github-search',
+        'triage',
       ].sort(),
     );
   });
@@ -53,7 +54,7 @@ describe('tool registry', () => {
 describe('progressive exposure', () => {
   it('list_namespaces returns descriptions and counts', () => {
     const ns = listNamespaces(registry);
-    expect(ns.length).toBe(7);
+    expect(ns.length).toBe(8);
     for (const entry of ns) {
       expect(entry.toolCount).toBeGreaterThan(0);
       expect(entry.description.length).toBeGreaterThan(10);
