@@ -94,3 +94,35 @@ One line each, with rationale.
 - **Integration tests load `.env` themselves** — added a tiny loader in the
   integration setup (vitest doesn't auto-load it); the chain test self-skips when
   no token is configured, so `pnpm test` stays green without credentials.
+
+## Sandbox seed + retry fix + subagents
+
+- **Seed script is idempotent by title** — re-running `scripts/seed.ts` skips
+  issues that already exist, so it's safe to re-run. Issues + labels only (the
+  PAT is Contents:read-only); the user adds PRs manually.
+- **Retry bug fix (`request.retries` → `retry.retries`)** — a global
+  `request.retries` made the retry plugin's Bottleneck limiter retry every
+  failed request, including `doNotRetry` statuses (404/422 were retried 3×).
+  Moving the count to the plugin's `retry.retries` makes `doNotRetry` effective.
+- **Subagent isolation is structural, four ways** — separate `Agent` instance on
+  the worker model; brief-only input (a pure function of the task params, no
+  parent conversation); a SCOPED registry (`registry.subset`) that physically
+  holds only the read-only subset so out-of-scope tools can't be discovered or
+  invoked; and a typed structured return. Proven by `subagents.isolation.test.ts`.
+- **Scope source = base (subagent-free) registry** — subagents scope from the
+  base registry, while the orchestrator's registry adds the subagent tools. Keeps
+  the dependency direction one-way (agents → tools), avoids cycles, and stops a
+  subagent from scoping itself in recursively.
+- **Structured output via a separate structuring model, not native on the
+  tool-calling request** — Gemini rejects a JSON response mime type in the same
+  request as function calling. Passing `structuredOutput: { schema, model:
+  workerModel }` runs a tools-free structuring pass that emits native JSON and
+  populates `result.object`. (`jsonPromptInjection` avoided the error but left
+  `.object` empty.)
+- **System owns the identifier, not the model** — `prNumber`/`issueNumber` are
+  excluded from the model-facing body schema and stamped on by the run function;
+  the model was unreliable at echoing them (returned `1.23` for issue 10).
+- **Worker model has no fallback chain (per spec); free-tier 429s surface as
+  errors** — subagent integration tests self-skip on a quota/rate-limit error
+  (limit ~20 req/min for flash-lite), exactly as they skip without credentials,
+  so `pnpm test` stays green. The path itself is verified when quota is available.

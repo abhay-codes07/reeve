@@ -41,6 +41,23 @@
 - Tests: unit schema-lineup (referential + real data flow) and an integration
   test running the chain end-to-end against the real sandbox repo.
 
+## What we built (sandbox seed + subagents)
+
+- `scripts/seed.ts`: seeded the sandbox with 10 varied open issues (+ labels),
+  idempotent by title. Issues only (PAT is Contents:read-only).
+- Fixed a retry bug: a global `request.retries` caused the retry plugin to retry
+  even `doNotRetry` 4xx statuses (404/422 retried 3×). Moved to `retry.retries`.
+- Real isolated subagents (`review_pr`, `investigate_issue`) per invariant #2:
+  separate worker-model Agent, brief-only input, a scoped `registry.subset` of
+  read-only tools, typed structured return. Registered as discoverable tools in
+  the orchestrator registry; base registry stays subagent-free (scope source).
+- Subagent structured output uses a separate tools-free structuring pass
+  (Gemini can't mix function-calling with native JSON response format); the
+  system stamps the authoritative PR/issue number rather than trusting the model.
+- Tests: 8 isolation unit tests (scoped toolset, can't reach out-of-scope,
+  brief-only input, fresh threadId, discoverable-but-non-recursive) + live
+  integration tests (self-skip on free-tier 429 / no PRs / no creds).
+
 ## What we cut / deferred
 
 - The actual tools, agents, workflows, and eval harness (Steps 3–6) — only
