@@ -1,30 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title desc">
-  <title id="title">Reeve</title>
-  <desc id="desc">A hexagonal seal with a steward's key carved in negative space — the mark for Reeve, an autonomous GitHub maintainer.</desc>
-  <!--
-    Palette: accent teal #14B8A6 (deep slate #1E293B is used for the wordmark in the lockup).
-    The mark is a single accent colour plus transparency, so it reads on both light and dark
-    backgrounds. The key (a steward's emblem) is negative space: the background shows through it.
-    Original geometric work — no third-party marks.
-  -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" role="img" aria-labelledby="t d">
+  <title id="t">Reeve</title>
+  <desc id="d">A shield seal with a stylised R — the mark for Reeve, an autonomous GitHub maintainer.</desc>
   <defs>
-    <mask id="reeve-key">
-      <rect width="64" height="64" fill="white"/>
-      <!-- bow: a ring -->
-      <circle cx="32" cy="21" r="7" fill="black"/>
-      <circle cx="32" cy="21" r="3" fill="white"/>
-      <!-- shaft -->
-      <rect x="29.5" y="21" width="5" height="22" rx="2.5" fill="black"/>
-      <!-- teeth -->
-      <rect x="34.5" y="34" width="6" height="3" rx="1.5" fill="black"/>
-      <rect x="34.5" y="39.5" width="4.5" height="3" rx="1.5" fill="black"/>
-    </mask>
+    <linearGradient id="shield" x1="6" y1="14" x2="86" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34E0C8"/>
+      <stop offset=".52" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+    <linearGradient id="rfill" x1="48" y1="26" x2="48" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D7E2EE"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <path d="M26 20 H70 Q78 20 78 28 V50 Q78 70 48 82 Q18 70 18 50 V28 Q18 20 26 20 Z"/>
+    </clipPath>
+    <filter id="lift" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="3" flood-color="#070B18" flood-opacity="0.45"/>
+    </filter>
   </defs>
-  <polygon
-    points="32,5 55.38,18.5 55.38,45.5 32,59 8.62,45.5 8.62,18.5"
-    fill="#14B8A6"
-    stroke="#14B8A6"
-    stroke-width="4"
-    stroke-linejoin="round"
-    mask="url(#reeve-key)"/>
+
+  <g filter="url(#lift)">
+    <!-- shield body -->
+    <path d="M26 20 H70 Q78 20 78 28 V50 Q78 70 48 82 Q18 70 18 50 V28 Q18 20 26 20 Z" fill="url(#shield)"/>
+    <!-- top sheen + inner rim for depth -->
+    <g clip-path="url(#clip)">
+      <ellipse cx="48" cy="8" rx="44" ry="22" fill="#FFFFFF" opacity="0.16"/>
+    </g>
+    <path d="M26 20 H70 Q78 20 78 28 V50 Q78 70 48 82 Q18 70 18 50 V28 Q18 20 26 20 Z"
+      fill="none" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.5"/>
+
+    <!-- constructed R: stem + bowl (right half-ring, open counter) + leg -->
+    <g fill="url(#rfill)">
+      <rect x="34" y="30" width="11" height="38" rx="3"/>
+      <path d="M45 27 A14.5 14.5 0 0 1 45 56 L45 48 A6.5 6.5 0 0 0 45 35 Z"/>
+      <path d="M43 49 L53 49 L64 68 L54 68 Z"/>
+    </g>
+  </g>
 </svg>
