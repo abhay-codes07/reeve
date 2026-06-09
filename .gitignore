@@ -7,3 +7,6 @@ dist/
 # Build traces go to the evaluator by email, not into the public repo.
 /artifacts/traces/
 /artifacts/reeve-traces.zip
+
+# Personal demo runbook (companion for recording; not part of the repo).
+/DEMO.md
