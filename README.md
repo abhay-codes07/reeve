@@ -2,6 +2,11 @@
   <img src="assets/reeve-lockup.svg" alt="Reeve — autonomous GitHub maintainer" height="64">
 </p>
 
+[![CI](https://github.com/abhay-codes07/reeve/actions/workflows/ci.yml/badge.svg)](https://github.com/abhay-codes07/reeve/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+![Node](https://img.shields.io/badge/node-20-brightgreen.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)
+
 # Reeve
 
 Reeve is a production-shaped autonomous agent that maintains a GitHub repository the way a senior maintainer would — built on [Mastra](https://mastra.ai) + Google Gemini, it interprets a task, **discovers and selects its own tools by description** (62 tools across 9 namespaces, progressively exposed), **delegates isolated subtasks to scoped read-only subagents**, and runs **long-horizon jobs** (the `triage_repository` task crossed **27 tool calls** in one live session) without losing its plan — all behind production scaffolding: a single throttled/retrying GitHub client, a typed error taxonomy, structured spans, and an eval harness with unit + integration tests.
@@ -31,6 +36,38 @@ pnpm eval                         # eval with the live LLM judge
 > Free-tier note: `gemini-2.5-flash-lite` is capped at **20 requests/day**. One
 > full triage run can exhaust it; runs fail fast on a 429 rather than retry. Move
 > the model in `src/config/models.ts` to a higher tier for sustained use.
+
+## See it run
+
+A real excerpt from the flagship `triage_repository` run on the sandbox repo
+(full capture: [`artifacts/triage-demo.txt`](./artifacts/triage-demo.txt)) — it
+records a plan, paginates every open issue, clusters them, investigates the top
+items via the isolated subagent, and emits a ranked backlog:
+
+```text
+======== PLAN (recorded to memory at start) ========
+Triage all open issues in abhay-codes07/reeve-sandbox
+  1. gather: paginate through all open issues
+  2. cluster: group issues into prioritised clusters
+  3. investigate: run the investigate_issue subagent on the top-priority items
+  4. draft: write maintainer responses for each cluster
+  5. backlog: emit a ranked backlog
+
+======== RANKED BACKLOG ========
+  #1 Security (critical) — issues #5
+      labels: security, priority:critical
+      draft : Thanks for the report. We treat security issues (#5) as critical priority
+              and will investigate immediately. Please avoid sharing further exploit details publicly.
+  #2 Bug (high) — issues #9, #4, #1
+      labels: bug, needs-triage
+  #3 Performance (medium) — issues #8
+      labels: performance
+
+======== SUMMARY ========
+total issues     : 11
+clusters         : 7
+TOTAL TOOL CALLS : 27 (>20 ✅)
+```
 
 ## Architecture
 
@@ -198,3 +235,7 @@ swap the runtime model to a higher-tier/paid key in **one line** in
 `src/config/models.ts` (the model router makes the provider/model
 provider-swappable). No code changes are required to point Reeve at a different
 repository — only `GITHUB_SANDBOX_REPO`.
+
+## License
+
+[MIT](./LICENSE) © 2026 Abhay Singh.
