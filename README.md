@@ -111,7 +111,7 @@ flowchart TD
 | Property | Code | Proven by |
 | --- | --- | --- |
 | 50+ tools, ≥4 namespaces, model-selected, progressively exposed | `src/tools/registry.ts`, `src/tools/exposure.ts` (62 tools / 9 ns) | `tests/unit/tools.registry.test.ts`, `tests/unit/tools.handlers.test.ts`; live `artifacts/smoke.txt` |
-| ≥1 truly isolated subagent, scoped tools, typed return | `src/agents/subagents/runner.ts`, `review-pr.ts`, `investigate-issue.ts` | `tests/unit/subagents.isolation.test.ts`; live investigations in `artifacts/triage-demo.txt` |
+| ≥1 truly isolated subagent, scoped tools, typed return | `src/agents/subagents/runner.ts`, `review-pr.ts`, `investigate-issue.ts` | `tests/unit/subagents.isolation.test.ts`; **live `review_pr` → typed PrReview on PR #11** `artifacts/review-pr.txt`; investigations in `artifacts/triage-demo.txt` |
 | Single session crosses 20 tool calls, plan intact | `src/workflows/triage-repository.ts`, `triage-memory.ts` | `tests/unit/triage-repository.test.ts`; **live 27 calls** `artifacts/triage-demo.txt` |
 | Observability, retries+backoff, rate limiting, typed errors, eval, unit+integration tests | `src/github/client.ts`, `src/observability/`, `src/errors/`, `src/eval/` | `tests/integration/github.resilience.test.ts`, `tests/unit/model-fallback.test.ts`, `tests/unit/eval.test.ts`, `artifacts/eval-mock.txt` |
 | ≥1 composed tool chain | `src/workflows/triage-chain.ts` | `tests/unit/chain.schemas.test.ts`, `tests/integration/triage-chain.test.ts` |
