@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm must be installed BEFORE setup-node so the pnpm cache works.
+      # Version is read from the `packageManager` field in package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      # Integration tests self-skip without credentials (no secrets needed in CI);
+      # unit tests and the msw-backed GitHub tests run fully.
+      - name: Test
+        run: pnpm test
+
+      # Eval harness runs fully offline with the stubbed judge.
+      - name: Eval (offline)
+        run: pnpm eval --mock
